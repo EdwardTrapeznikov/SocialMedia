@@ -16,7 +16,7 @@ data class Post(
     val id: Int = 0,
     val authorId: Int = 0,
     val authorName: String = "",
-    val text: String = "",
+    val text: String? = null,
     val viewsCount: Int = 0,
     val likesCount: Int = 0,
     val sharesCount: Int = 0,
@@ -25,7 +25,10 @@ data class Post(
     val isPublished: Boolean = true,
     val isRepost: Boolean = false,
     val comments: Comments = Comments(),
-    val likes: Likes = Likes()
+    val likes: Likes = Likes(),
+    val imageUrl: String? = null,
+    val videoUrl: String? = null,
+    val attachments: List<Attachment> = emptyList()
 )
 
 data class Comments(
@@ -41,6 +44,71 @@ data class Likes(
     val canPublish: Boolean = true,
     val userLikes: Boolean = false,
     val myLike: Boolean = false
+)
+
+interface Attachment {
+    val type: String
+}
+
+data class PhotoAttachment(
+    override val type: String = "photo",
+    val photo: Photo
+) : Attachment
+
+data class Photo(
+    val id: Int,
+    val ownerId: Int,
+    val photo130: String?,
+    val photo604: String?
+)
+
+data class VideoAttachment(
+    override val type: String = "video",
+    val video: Video
+) : Attachment
+
+data class Video(
+    val id: Int,
+    val ownerId: Int,
+    val title: String,
+    val duration: Int // секунды
+)
+
+data class AudioAttachment(
+    override val type: String = "audio",
+    val audio: Audio
+) : Attachment
+
+data class Audio(
+    val id: Int,
+    val ownerId: Int,
+    val title: String,
+    val artist: String,
+    val duration: Int // секунды
+)
+
+data class DocumentAttachment(
+    override val type: String = "doc",
+    val document: Document
+) : Attachment
+
+data class Document(
+    val id: Int,
+    val ownerId: Int,
+    val title: String,
+    val url: String,
+    val size: Int // байты
+)
+
+data class LinkAttachment(
+    override val type: String = "link",
+    val link: Link
+) : Attachment
+
+data class Link(
+    val url: String,
+    val title: String,
+    val description: String?
 )
 
 object WallService {
