@@ -2,14 +2,39 @@ import java.time.LocalDateTime
 import kotlin.math.truncate
 
 fun main() {
-    WallService.add(Post(0,0,"Edward","Hello, its my first post",0,
-    0,0,false, false, true, false,
-    Comments(), Likes()))
-    WallService.add(Post(0,0,"Edward","Hello, its my second post",0,
-        0,0,false, false, true, false,
-        Comments(), Likes()))
-    WallService.printPost()
+    try {
+        WallService.add(
+            Post(
+                0, 0, "Edward", "Hello, its my first post", 0,
+                0, 0, false, false, true, false,
+                Comments(), Likes(), null, null, emptyList()
+            )
+        )
+        WallService.add(
+            Post(
+                0, 0, "Edward", "Hello, its my second post", 0,
+                0, 0, false, false, true, false,
+                Comments(), Likes(), null, null, emptyList()
+            )
+        )
+        WallService.printPost()
 
+        // Пример добавления комментария
+        val post = WallService.add(
+            Post(
+                0, 0, "Alice", "Test post", 0,
+                0, 0, false, false, true, false,
+                Comments(), Likes(), null, null, emptyList()
+            )
+        )
+
+        val comment = Comment(0, 123, "Отличный пост!", Donut())
+        val addedComment = WallService.createComment(post.id, comment)
+        println("Комментарий добавлен: ${addedComment.text}")
+
+    } catch (e: PostNotFoundException) {
+        println("Ошибка: ${e.message}")
+    }
 }
 
 data class Post(
@@ -44,6 +69,31 @@ data class Likes(
     val canPublish: Boolean = true,
     val userLikes: Boolean = false,
     val myLike: Boolean = false
+)
+
+data class Comment(
+    val id: Int = 0,
+    val fromId: Int = 0,
+    val text: String = "",
+    val donut: Donut = Donut(),
+    val replyToUser: Int? = null,
+    val replyToComment: Int? = null,
+    val attachments: List<Attachment> = emptyList(),
+    val parentsStack: List<Int> = emptyList(),
+    val thread: ThreadInfo = ThreadInfo()
+)
+
+data class Donut(
+    val isDon: Boolean = false,
+    val placeholder: String? = null
+)
+
+data class ThreadInfo(
+    val count: Int = 0,
+    val items: List<Comment> = emptyList(),
+    val canPost: Boolean = true,
+    val showReplyButton: Boolean = true,
+    val groupsCanPost: Boolean = false
 )
 
 interface Attachment {
@@ -111,18 +161,23 @@ data class Link(
     val description: String?
 )
 
+class PostNotFoundException(message: String) : Exception(message)
+
 object WallService {
     var posts = emptyArray<Post>()
+    private var comments = emptyArray<Comment>()
     var lastId = 0
-
-    fun clear() {
-        posts = emptyArray()
-        lastId = 0
-    }
+    private var lastCommentId = 0
 
     fun add(post: Post): Post {
-        posts += post.copy(++lastId)
-        return posts.last()
+        val newPost = if (post.id == 0) {
+            val id = ++lastId
+            post.copy(id = id)
+        } else {
+            post
+        }
+        posts += newPost
+        return newPost
     }
 
     fun update(new: Post): Boolean {
@@ -135,11 +190,39 @@ object WallService {
         return false
     }
 
+    fun clear() {
+        posts = emptyArray()
+        comments = emptyArray()
+        lastId = 0
+        lastCommentId = 0
+    }
+
     fun printPost() {
         for (post in posts) {
             println(post)
             println()
         }
     }
+
+    fun createComment(postId: Int, comment: Comment): Comment {
+        // Проверяем, существует ли пост
+        val postExists = posts.any { it.id == postId }
+        if (!postExists) {
+            throw PostNotFoundException("Пост с ID $postId не найден")
+        }
+
+        // Присваиваем ID комментарию
+        val newComment = if (comment.id == 0) {
+            val id = ++lastCommentId
+            comment.copy(id = id)
+        } else {
+            comment
+        }
+
+        // Добавляем в массив
+        comments += newComment
+        return newComment
+    }
 }
+
 
